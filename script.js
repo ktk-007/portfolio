@@ -26,11 +26,14 @@ function wire(el, url, pre = '') {
   }
 }
 
+const gmailUrl = CFG.email ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(CFG.email)}` : '';
+const hireMailUrl = CFG.email ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(CFG.email)}&su=${encodeURIComponent('Opportunity / Hiring — Tharun Kumar')}` : '';
+
 wire($('#gh'), CFG.github);
 wire($('#li'), CFG.linkedin);
-wire($('#em'), CFG.email, 'mailto:');
+wire($('#em'), gmailUrl);
 wire($('#resume'), CFG.resume);
-wire($('#hireBtn'), CFG.email, 'mailto:');
+wire($('#hireBtn'), hireMailUrl);
 
 document.querySelectorAll('[data-soon]').forEach(a => {
   a.title = 'Coming soon';
