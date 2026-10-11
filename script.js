@@ -530,24 +530,16 @@ addEventListener('resize', () => {
   }, 150);
 });
 
-/* ===== scroll: a black dome rises from the bottom and opens into the About section ===== */
+/* ===== scroll: a dome rises from the bottom and opens into the About section ===== */
 const track = $('#track'), dome = $('#dome'), about = $('#about');
-let heroCovered = false, navItems = null;
-
-/* every navbar item is measured once, so it can flip to white exactly when the dome reaches it */
-function measureNav() {
-  navItems = [...document.querySelectorAll('.tk, .divider, .links a, .resume, .hire-me, .menu-btn')].map(el => {
-    const r = el.getBoundingClientRect();
-    return { el, ok: r.width > 0, x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  });
-}
+let heroCovered = false;
 
 function updateScroll() {
   const vw = innerWidth, vh = hero.offsetHeight;
   const range = Math.max(1, track.offsetHeight - vh);
   const p = reduce ? 0 : Math.min(1, Math.max(0, (scrollY - track.offsetTop) / range));
-  const e = p * p * (3 - 2 * p);                          // smooth start and end
-  const rMax = Math.hypot(vw / 2, vh) * 1.02;             // radius that reaches the far top corners
+  const e = p * p * (3 - 2 * p);
+  const rMax = Math.hypot(vw / 2, vh) * 1.02;
   const r = rMax * e;
   const clip = `circle(${r}px at 50% 100%)`;
   dome.style.clipPath = clip;
@@ -556,13 +548,6 @@ function updateScroll() {
   const aboutTop = about.getBoundingClientRect().top;
   heroCovered = reduce ? aboutTop <= 0 : p >= 1;
 
-  if (!navItems) measureNav();
-  const open = !panel.hidden;                             // keep the mobile menu panel readable
-  for (const it of navItems) {
-    if (!it.ok) continue;
-    const dark = !open && (reduce ? aboutTop <= it.y : Math.hypot(it.x - vw / 2, it.y - vh) <= r);
-    it.el.classList.toggle('inv', dark);
-  }
   hero.classList.toggle('covered', heroCovered);
   document.documentElement.classList.toggle('dark-page', heroCovered);
 }
@@ -576,15 +561,8 @@ addEventListener('scroll', () => {
     updateScroll();
   });
 }, { passive: true });
-addEventListener('resize', () => {
-  navItems = null;
-  updateScroll();
-});
-new MutationObserver(updateScroll).observe(btn, { attributes: true, attributeFilter: ['aria-expanded'] });
-if (document.fonts) document.fonts.ready.then(() => {
-  navItems = null;
-  updateScroll();
-});
+addEventListener('resize', updateScroll);
+if (document.fonts) document.fonts.ready.then(updateScroll);
 
 document.querySelectorAll('[data-about]').forEach(a => a.addEventListener('click', e => {
   e.preventDefault();

@@ -29,9 +29,9 @@ body {
   min-height: 100%;
 }
 
-/* once the black dome has covered the hero, keep the page background black (no white flash when overscrolling) */
+/* once the dome has covered the hero, keep the page background consistent (no flash when overscrolling) */
 html.dark-page {
-  background: #000;
+  background: var(--bg);
 }
 
 a {
@@ -142,12 +142,12 @@ a {
   pointer-events: none;
 }
 
-/* black dome that rises from the bottom centre and grows until it fills the screen (radius is set from script.js) */
+/* dome that rises from the bottom centre and grows until it fills the screen (radius is set from script.js) */
 .dome {
   position: absolute;
   inset: 0;
   z-index: 10;
-  background: #000;
+  background: var(--bg);
   pointer-events: none;
   -webkit-clip-path: circle(0px at 50% 100%);
   clip-path: circle(0px at 50% 100%);
@@ -161,8 +161,8 @@ a {
 /* About section */
 .about {
   position: relative;
-  background: #000;
-  color: #fff;
+  background: var(--bg);
+  color: var(--ink);
   min-height: 100vh;
   padding: clamp(120px, 18vh, 200px) 6% 120px;
 }
@@ -204,49 +204,6 @@ a {
   display: flex;
   align-items: center;
   pointer-events: auto;
-}
-
-/* each navbar item switches to white once the black dome is behind it (the .inv class is set per item in script.js) */
-.tk, .links a {
-  transition: color 0.25s;
-}
-
-.tk.inv, .links a.inv {
-  color: #fff;
-}
-
-.divider.inv {
-  background: #fff;
-}
-
-.links a.inv:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.resume.inv {
-  background: #fff;
-  color: #0b0b0c;
-  box-shadow: none;
-}
-
-.resume.inv:hover {
-  background: #e8e8ea;
-}
-
-.hire-me.inv {
-  background: transparent;
-  color: #fff;
-  border-color: #fff;
-  box-shadow: none;
-}
-
-.hire-me.inv:hover {
-  background: #fff;
-  color: #0b0b0c;
-}
-
-.menu-btn.inv {
-  color: #fff;
 }
 
 .nav-r {
