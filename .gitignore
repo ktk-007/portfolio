@@ -1,0 +1,6 @@
+# Assets folder ignored as requested
+assets/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
