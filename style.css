@@ -27,6 +27,7 @@ html, body {
 
 body {
   min-height: 100%;
+  font-family: var(--disp);
 }
 
 a {
@@ -136,6 +137,7 @@ a {
 /* About section */
 .about {
   position: relative;
+  overflow-x: clip; /* the particle field around the portrait may extend past the screen edge */
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
@@ -358,18 +360,11 @@ a {
   perspective-origin: center;
 }
 
+/* particle field around the portrait: its position and size are set from script.js (it extends well beyond the photo) */
 .portrait-particles {
   position: absolute;
-  inset: -20px;
   z-index: -1;
-  border-radius: 24px;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-
-.portrait-card-wrap:hover .portrait-particles {
-  opacity: 1;
 }
 
 .portrait-card {
@@ -405,6 +400,21 @@ a {
     justify-self: start;
     margin-top: 28px;
   }
+}
+
+/* frosted pill behind the left navbar links once you scroll past the hero, so they stay readable over the page text */
+.nav-l {
+  transition: background 0.25s, box-shadow 0.25s;
+}
+
+.nav.scrolled .nav-l {
+  margin-left: -18px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
 }
 
 /* header */

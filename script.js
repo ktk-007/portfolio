@@ -596,195 +596,105 @@ document.querySelectorAll('[data-about]').forEach(a => a.addEventListener('click
   scrollTo({ top: about.getBoundingClientRect().top + scrollY, behavior: reduce ? 'auto' : 'smooth' });
 }));
 
-/* ===== About portrait card 3D tilt + particles ===== */
-const portraitCard = document.querySelector('#aboutPortraitCard');
-const portraitParticles = document.querySelector('#aboutPortraitParticles');
+/* ===== About portrait: the Antigravity-style particle ring, enlarged so it shows around the photo ===== */
+if (portraitParticles && portraitCard && !reduce) {
+  const cvs = portraitParticles, g = cvs.getContext('2d'), wrap = portraitCard.parentElement;
+  let cw = 0, ch = 0, K = 1, pts = [], t = 0, lastT = 0, inten = 0, raf = 0, visible = false, active = false, px_ = 0, py_ = 0;
+  const rg = { u: 0, v: 0 };
 
-if (portraitCard && !reduce) {
-  const maxTilt = 18;
-  const resetDuration = 450;
+  function sizeField() {
+    const r = wrap.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+    const m = Math.round(Math.min(240, Math.max(120, r.width * 0.55)));   // how far the field reaches beyond the photo
+    cw = r.width + 2 * m; ch = r.height + 2 * m;
+    Object.assign(cvs.style, { left: -m + 'px', top: -m + 'px', width: cw + 'px', height: ch + 'px' });
+    cvs.width = cw * d; cvs.height = ch * d;
+    g.setTransform(d, 0, 0, d, 0, 0); g.lineCap = 'round';
+    K = r.width * 4.7;                                                    // ring radius is about 0.8x the photo width, so it clears the photo
+    pts = poisson(cw + 160, ch + 160, 30).map(([x, y]) => ({ u: (x - 80 - cw / 2) / K, v: (ch / 2 - (y - 80)) / K, s: 0, vel: 0, qx: 0, qy: 0, t2: 0 }));
+  }
 
-  portraitCard.style.transition =
-    'transform 80ms linear, box-shadow 200ms ease';
+  function draw(dt) {
+    g.clearRect(0, 0, cw, ch);
+    const rc = cvs.getBoundingClientRect(), lx = px_ - rc.left, ly = py_ - rc.top;
+    active = active && lx >= 0 && ly >= 0 && lx <= cw && ly <= ch;
+    const f = Math.min(3, dt * 60);
+    inten += ((active ? 1 : 0) - inten) * (1 - Math.exp(-dt * 4));
+    const tu = active ? (lx - cw / 2) / K : 0, tv = active ? (ch / 2 - ly) / K : 0;
+    const wu = (Math.sin(t * 0.66 + 1.3) + Math.sin(t * 1.1)) * 0.012, wv = (Math.sin(t * 0.75 + 2.1) + Math.sin(t * 0.9)) * 0.01;
+    const k = 1 - Math.pow(0.97, f);
+    rg.u += (tu + wu - rg.u) * k; rg.v += (tv + wv - rg.v) * k;
+    if (inten < 0.004) return;
+    const R = 0.175 + Math.sin(t) * 0.03 + Math.cos(3 * t) * 0.02, RW = 0.15, RW2 = 0.05, D = 0.15, cut = R + RW + 0.03;
+    const ka = 1 - Math.pow(0.8, f), dq = Math.pow(0.2, f), dv = Math.pow(0.5, f);
+    const rsx = cw / 2 + rg.u * K, rsy = ch / 2 - rg.v * K;
+    for (const p of pts) {
+      const cu = p.u, cv = p.v, dist = Math.hypot(cu - rg.u, cv - rg.v);
+      let tot = 0;
+      if (dist < cut) {
+        const n0 = sn(cu * 0.2 + 18.4924, cv * 0.2 + 72.9744, t * 0.25), dist1 = Math.hypot(cu + n0 * 0.005 - rg.u, cv + n0 * 0.005 - rg.v);
+        let a = Math.max(0, ss(R - 2 * RW, R, dist) - ss(R, R + RW, dist1)), b = Math.max(0, ss(R - 2 * RW2, R, dist) - ss(R, R + RW2, dist1));
+        const c = ss(R + RW2, R, dist);
+        a *= a; b = b * b * b;
+        a += b * 3 + c * 0.4 + sn(cu * 30 + 11.4924, cv * 30 + 12.9744, t * 0.25) * c * 0.5;
+        tot = a * inten; p.t2 = b;
+      }
+      if (tot <= 0 && p.s < 0.01) { p.s = 0; p.vel = 0; continue; }
+      p.s += (tot - p.s) * ka; p.vel = p.vel * dv + p.s * 0.5 * (1 - dv);
+      if (p.s < 0.1) continue;
+      const n1 = sn(cu * 4 + 88.494, cv * 4 + 32.4397, t * 0.175), n2 = sn(cu * 4 + 50.904, cv * 4 + 120.947, t * 0.175);
+      const n3 = sn(cu * 20 + 18.4924, cv * 20 + 72.9744, t * 0.25), n4 = sn(cu * 20 + 50.904, cv * 20 + 120.947, t * 0.25);
+      const cd = Math.min(1, dist), dx = n1 * 0.03 + n3 * 0.005 + Math.sin(cu * 20 + t * 2) * 0.02 * cd, dy = n2 * 0.03 + n4 * 0.005 + Math.cos(cv * 20 + t * 1.5) * 0.02 * cd;
+      const pk = D * Math.pow(p.t2 || 0, 0.75);
+      p.qx = p.qx * dq + 0.25 * (cu + dx - rg.u) * pk; p.qy = p.qy * dq + 0.25 * (cv + dy - rg.v) * pk;
+      const fu = cu + dx + p.qx, fv = cv + dy + p.qy, sx = cw / 2 + fu * K, sy = ch / 2 - fv * K;
+      const ang = Math.atan2(sy - rsy, sx - rsx) + sn(fu * 10 + 18.4924, fv * 10 + 72.9744, t * 0.85) * 0.5;
+      const nc = (sn(fu * 2 + 74.664, fv * 2 + 91.556, t * 0.5) + 1) / 2, pr = ss(0, 0.75, nc * nc), h = 0.8;
+      let c1 = C1, c2 = C2, mm = pr / h;
+      if (pr >= h) { c1 = C2; c2 = C3; mm = (pr - h) / (1 - h); }
+      const vl = Math.min(1, p.vel);
+      const rr = (c1[0] + (c2[0] - c1[0]) * mm) * vl | 0, gg = (c1[1] + (c2[1] - c1[1]) * mm) * vl | 0, bb = (c1[2] + (c2[2] - c1[2]) * mm) * vl | 0;
+      const size = p.s * 3, th = Math.max(0.5, size * 0.4), len = Math.max(0, size - th) / 2, ux = Math.cos(ang) * len, uy = Math.sin(ang) * len;
+      g.globalAlpha = ss(0.1, 0.2, p.s); g.strokeStyle = `rgb(${rr},${gg},${bb})`; g.lineWidth = th;
+      g.beginPath(); g.moveTo(sx - ux, sy - uy); g.lineTo(sx + ux, sy + uy); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
 
-  portraitCard.addEventListener('pointermove', (event) => {
-    if (event.pointerType === 'touch') return;
+  function frame(ts) {
+    raf = 0;
+    const dt = Math.min(0.05, (ts - lastT) / 1000 || 0.016);
+    lastT = ts; t += dt;
+    draw(dt);
+    if (visible && (active || inten > 0.004)) raf = requestAnimationFrame(frame);
+    else g.clearRect(0, 0, cw, ch);
+  }
+  const kick = () => { if (!raf && visible) { lastT = performance.now(); raf = requestAnimationFrame(frame); } };
 
-    const rect = portraitCard.getBoundingClientRect();
+  function aim(e) {
+    if (e.pointerType === 'touch') return;
+    px_ = e.clientX; py_ = e.clientY;
+    const r = cvs.getBoundingClientRect();
+    active = px_ >= r.left && px_ <= r.right && py_ >= r.top && py_ <= r.bottom;
+    if (active) kick();
+  }
+  addEventListener('pointermove', aim, { passive: true });
+  document.addEventListener('pointerleave', () => { active = false; });
+  addEventListener('blur', () => { active = false; });
 
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
+  new IntersectionObserver(entries => {
+    visible = entries[0].isIntersecting;
+    if (visible) kick();
+  }, { rootMargin: '200px' }).observe(wrap);
 
-    // Clamp to prevent edge fluttering
-    const clampedX = Math.max(0, Math.min(1, x));
-    const clampedY = Math.max(0, Math.min(1, y));
-
-    // Normalize independently around the center of the card.
-    const normalizedX = (clampedX - 0.5) * 2;
-    const normalizedY = (clampedY - 0.5) * 2;
-
-    // Cursor on the right tilts the right edge toward the viewer.
-    const rotateY = normalizedX * maxTilt;
-
-    // Cursor at the bottom tilts the bottom edge toward the viewer.
-    const rotateX = -normalizedY * maxTilt;
-
-    portraitCard.style.transform =
-      `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-    portraitCard.style.boxShadow =
-      `${-normalizedX * 8}px ${16 + Math.abs(normalizedY) * 8}px 40px rgba(0, 0, 0, 0.18)`;
-  });
-
-  portraitCard.addEventListener('pointerleave', () => {
-    portraitCard.style.transition =
-      `transform ${resetDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 300ms ease`;
-
-    portraitCard.style.transform =
-      'rotateX(0deg) rotateY(0deg)';
-
-    portraitCard.style.boxShadow =
-      '0 16px 40px rgba(0, 0, 0, 0.12)';
-  });
-
-  portraitCard.addEventListener('pointerenter', () => {
-    portraitCard.style.transition =
-      'transform 80ms linear, box-shadow 200ms ease';
-  });
+  let rz;
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(sizeField, 150); });
+  sizeField();
 }
 
-/* ===== Midnight blue particles behind portrait card ===== */
-if (portraitParticles && !reduce) {
-  const canvas = portraitParticles;
-  const ctx = canvas.getContext('2d');
-  let particles = [];
-  let animationId = null;
-  let isHovering = false;
-  let lastTime = 0;
-
-  const midnightBlue = { r: 25, g: 25, b: 112 }; // #191970
-
-  function resizeCanvas() {
-    const wrap = portraitCard.parentElement;
-    const rect = wrap.getBoundingClientRect();
-    canvas.width = rect.width * devicePixelRatio;
-    canvas.height = rect.height * devicePixelRatio;
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-  }
-
-  function createParticles() {
-    const wrap = portraitCard.parentElement;
-    const rect = wrap.getBoundingClientRect();
-    const count = Math.min(60, Math.max(30, Math.floor((rect.width * rect.height) / 3000)));
-    particles = [];
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * rect.width,
-        y: Math.random() * rect.height,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: (Math.random() - 0.5) * 0.8,
-        radius: Math.random() * 2 + 1,
-        alpha: Math.random() * 0.4 + 0.1,
-        life: Math.random() * Math.PI * 2,
-      });
-    }
-  }
-
-  function draw(time) {
-    if (!isHovering) return;
-    
-    const dt = (time - lastTime) / 1000;
-    lastTime = time;
-
-    const wrap = portraitCard.parentElement;
-    const rect = wrap.getBoundingClientRect();
-
-    ctx.clearRect(0, 0, rect.width, rect.height);
-
-    // Subtle noise field for liquid-like motion
-    for (const p of particles) {
-      // Simple noise-based flow
-      const noiseX = Math.sin(p.x * 0.01 + time * 0.001) * 0.5;
-      const noiseY = Math.cos(p.y * 0.01 + time * 0.001) * 0.5;
-
-      p.vx += (noiseX - p.vx) * 0.02;
-      p.vy += (noiseY - p.vy) * 0.02;
-
-      p.x += p.vx * dt * 60;
-      p.y += p.vy * dt * 60;
-
-      // Wrap around
-      if (p.x < -10) p.x = rect.width + 10;
-      if (p.x > rect.width + 10) p.x = -10;
-      if (p.y < -10) p.y = rect.height + 10;
-      if (p.y > rect.height + 10) p.y = -10;
-
-      p.life += dt * 2;
-      const pulse = Math.sin(p.life) * 0.3 + 0.7;
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius * pulse, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${midnightBlue.r}, ${midnightBlue.g}, ${midnightBlue.b}, ${p.alpha * pulse})`;
-      ctx.fill();
-    }
-
-    // Draw connections for liquid-like web effect
-    ctx.strokeStyle = `rgba(${midnightBlue.r}, ${midnightBlue.g}, ${midnightBlue.b}, 0.06)`;
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 80) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.stroke();
-        }
-      }
-    }
-
-    animationId = requestAnimationFrame(draw);
-  }
-
-  function start() {
-    if (isHovering) return;
-    isHovering = true;
-    resizeCanvas();
-    createParticles();
-    lastTime = performance.now();
-    draw(lastTime);
-  }
-
-  function stop() {
-    isHovering = false;
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-      animationId = null;
-    }
-  }
-
-  // Recreate on resize
-  let resizeTimer = null;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      if (isHovering) {
-        resizeCanvas();
-        createParticles();
-      }
-    }, 150);
-  });
-
-  portraitCard.addEventListener('pointerenter', () => {
-    if (event.pointerType === 'touch') return;
-    start();
-  });
-
-  portraitCard.addEventListener('pointerleave', () => {
-    stop();
-  });
-}
+/* navbar: frosted pill behind the left links once you scroll past the hero */
+(() => {
+  const navEl = document.querySelector('.nav');
+  const onScrollNav = () => navEl.classList.toggle('scrolled', scrollY > innerHeight * 0.7);
+  addEventListener('scroll', onScrollNav, { passive: true });
+  onScrollNav();
+})();
