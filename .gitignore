@@ -1,0 +1,61 @@
+# Exclude assets directory
+assets/
+
+# Ignore all files by default except index, script, and style
+/*
+!/index.html
+!/style.css
+!/script.js
+!/assets/
+!/assets/**
+
+# Ignore .gitignore if present locally
+.gitignore
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Kilo Code agent worktrees
+.kilo/worktrees/
+
+# Kilo Agent Manager state
+.kilo/agent-manager.json
+
+# Kilo Code worktree setup script
+.kilo/setup-script
+
+# Kilo Code worktree setup script
+.kilo/setup-script.sh
+
+# Kilo Code worktree setup script
+.kilo/setup-script.ps1
+
+# Kilo Code worktree setup script
+.kilo/setup-script.cmd
+
+# Kilo Code worktree setup script
+.kilo/setup-script.bat
+
+# Kilo Code legacy agent worktrees
+.kilocode/worktrees/
+
+# Kilo Agent Manager legacy state
+.kilocode/agent-manager.json
+
+# Kilo Code legacy worktree setup script
+.kilocode/setup-script
+
+# Kilo Code legacy worktree setup script
+.kilocode/setup-script.sh
+
+# Kilo Code legacy worktree setup script
+.kilocode/setup-script.ps1
+
+# Kilo Code legacy worktree setup script
+.kilocode/setup-script.cmd
+
+# Kilo Code legacy worktree setup script
+.kilocode/setup-script.bat
