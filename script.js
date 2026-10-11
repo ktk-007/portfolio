@@ -596,6 +596,63 @@ document.querySelectorAll('[data-about]').forEach(a => a.addEventListener('click
   scrollTo({ top: about.getBoundingClientRect().top + scrollY, behavior: reduce ? 'auto' : 'smooth' });
 }));
 
+/* ===== About portrait card 3D tilt + particles ===== */
+const portraitCard = document.querySelector('#aboutPortraitCard');
+const portraitParticles = document.querySelector('#aboutPortraitParticles');
+
+if (portraitCard && !reduce) {
+  const maxTilt = 18;
+  const resetDuration = 450;
+
+  portraitCard.style.transition =
+    'transform 80ms linear, box-shadow 200ms ease';
+
+  portraitCard.addEventListener('pointermove', (event) => {
+    if (event.pointerType === 'touch') return;
+
+    const rect = portraitCard.getBoundingClientRect();
+
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+
+    // Clamp to prevent edge fluttering
+    const clampedX = Math.max(0, Math.min(1, x));
+    const clampedY = Math.max(0, Math.min(1, y));
+
+    // Normalize independently around the center of the card.
+    const normalizedX = (clampedX - 0.5) * 2;
+    const normalizedY = (clampedY - 0.5) * 2;
+
+    // Cursor on the right tilts the right edge toward the viewer.
+    const rotateY = normalizedX * maxTilt;
+
+    // Cursor at the bottom tilts the bottom edge toward the viewer.
+    const rotateX = -normalizedY * maxTilt;
+
+    portraitCard.style.transform =
+      `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+    portraitCard.style.boxShadow =
+      `${-normalizedX * 8}px ${16 + Math.abs(normalizedY) * 8}px 40px rgba(0, 0, 0, 0.18)`;
+  });
+
+  portraitCard.addEventListener('pointerleave', () => {
+    portraitCard.style.transition =
+      `transform ${resetDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 300ms ease`;
+
+    portraitCard.style.transform =
+      'rotateX(0deg) rotateY(0deg)';
+
+    portraitCard.style.boxShadow =
+      '0 16px 40px rgba(0, 0, 0, 0.12)';
+  });
+
+  portraitCard.addEventListener('pointerenter', () => {
+    portraitCard.style.transition =
+      'transform 80ms linear, box-shadow 200ms ease';
+  });
+}
+
 /* ===== About portrait: the Antigravity-style particle ring, enlarged so it shows around the photo ===== */
 if (portraitParticles && portraitCard && !reduce) {
   const cvs = portraitParticles, g = cvs.getContext('2d'), wrap = portraitCard.parentElement;
@@ -653,7 +710,7 @@ if (portraitParticles && portraitCard && !reduce) {
       if (pr >= h) { c1 = C2; c2 = C3; mm = (pr - h) / (1 - h); }
       const vl = Math.min(1, p.vel);
       const rr = (c1[0] + (c2[0] - c1[0]) * mm) * vl | 0, gg = (c1[1] + (c2[1] - c1[1]) * mm) * vl | 0, bb = (c1[2] + (c2[2] - c1[2]) * mm) * vl | 0;
-      const size = p.s * 3, th = Math.max(0.5, size * 0.4), len = Math.max(0, size - th) / 2, ux = Math.cos(ang) * len, uy = Math.sin(ang) * len;
+      const size = p.s * 2, th = Math.max(0.5, size * 0.4), len = Math.max(0, size - th) / 2, ux = Math.cos(ang) * len, uy = Math.sin(ang) * len;
       g.globalAlpha = ss(0.1, 0.2, p.s); g.strokeStyle = `rgb(${rr},${gg},${bb})`; g.lineWidth = th;
       g.beginPath(); g.moveTo(sx - ux, sy - uy); g.lineTo(sx + ux, sy + uy); g.stroke();
     }
