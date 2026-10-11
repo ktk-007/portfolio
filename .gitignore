@@ -7,10 +7,10 @@ assets/
 !/style.css
 !/script.js
 !/.gitignore
-!/assets/
-!/assets/**
 !/robots.txt
 !/sitemap.xml
+!/assets/
+!/assets/**
 
 # Ignore .gitignore if present locally
 .gitignore
