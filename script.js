@@ -340,6 +340,26 @@ function buildAscii() {
   const v = new Float32Array(n);
   for (let i = 0; i < n; i++) v[i] = 0.7 * (h[lum[i] * 255 | 0] / (tot || 1)) + 0.3 * lum[i];
 
+  /* local contrast: features stand out from their surroundings instead of the whole face going pale */
+  {
+    const R = 7, W = cols + 1, Iq = new Float64Array(W * (rows + 1));
+    for (let y = 0; y < rows; y++) {
+      let rs = 0;
+      for (let x = 0; x < cols; x++) {
+        rs += v[y * cols + x];
+        Iq[(y + 1) * W + x + 1] = Iq[y * W + x + 1] + rs;
+      }
+    }
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const x0 = Math.max(0, x - R), x1 = Math.min(cols, x + R + 1), y0 = Math.max(0, y - R), y1 = Math.min(rows, y + R + 1),
+          a = (Iq[y1 * W + x1] - Iq[y0 * W + x1] - Iq[y1 * W + x0] + Iq[y0 * W + x0]) / ((x1 - x0) * (y1 - y0)),
+          o = v[y * cols + x];
+        v[y * cols + x] = Math.min(1, Math.max(0, 0.55 * a + 1.9 * (o - a) + 0.06));
+      }
+    }
+  }
+
   /* unsharp mask on the cell grid */
   const out = new Float32Array(n);
   for (let y = 0; y < rows; y++) {
@@ -355,7 +375,7 @@ function buildAscii() {
         }
       }
       const o = v[y * cols + x];
-      out[y * cols + x] = Math.min(1, Math.max(0, o + 1.3 * (o - s / c)));
+      out[y * cols + x] = Math.min(1, Math.max(0, o + 1 * (o - s / c)));
     }
   }
 
@@ -367,16 +387,48 @@ function buildAscii() {
   lc.globalCompositeOperation = 'source-in';
   lc.fillStyle = '#fff';
   lc.fillRect(0, 0, layer.width, layer.height);
-  lc.globalCompositeOperation = 'source-over';
-  lc.font = `${5 * dpr}px "JetBrains Mono",ui-monospace,Menlo,monospace`;
-  lc.textBaseline = 'top';
-  lc.fillStyle = '#0a0a0a';
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const i = y * cols + x;
+
+  G = {
+    cols,
+    rows,
+    al,
+    ink: out.map(v => 1 - Math.pow(v, 1.1)),
+    spd: Float32Array.from({ length: cols }, () => 7 + Math.random() * 16),
+    ph: Float32Array.from({ length: cols }, () => Math.random() * (rows + 40)),
+    len: Float32Array.from({ length: cols }, () => 10 + Math.random() * 22)
+  };
+}
+
+let G = null;
+/* waterfall: every column has its own falling streams; the face stays readable underneath */
+function drawRain(t) {
+  const { cols, rows, al, ink, spd, ph, len } = G, n = RAMP.length, R2 = rad * rad,
+    c0 = Math.max(0, Math.floor((cx - rad) / CW)), c1 = Math.min(cols - 1, Math.ceil((cx + rad) / CW)),
+    r0 = Math.max(0, Math.floor((cy - rad) / CH)), r1 = Math.min(rows - 1, Math.ceil((cy + rad) / CH));
+  lx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  lx.font = '5px "JetBrains Mono",ui-monospace,Menlo,monospace';
+  lx.textBaseline = 'top';
+  let cur = '';
+  for (let c = c0; c <= c1; c++) {
+    const L = len[c], per = rows + L, h1 = (t * spd[c] + ph[c]) % per, h2 = (h1 + per / 2) % per;
+    for (let r = r0; r <= r1; r++) {
+      const i = r * cols + c;
       if (al[i] < 0.5) continue;
-      const idx = Math.min(RAMP.length - 1, Math.floor((1 - Math.pow(out[i], 1.3)) * RAMP.length));
-      if (idx > 0) lc.fillText(RAMP[idx], x * CW * dpr, y * CH * dpr);
+      const mx = (c + 0.5) * CW - cx, my = (r + 0.5) * CH - cy;
+      if (mx * mx + my * my > R2) continue;
+      let b = 0, d = h1 - r;
+      if (d >= 0 && d < L) b = Math.pow(1 - d / L, 1.6);
+      d = h2 - r;
+      if (d >= 0 && d < L) b = Math.max(b, Math.pow(1 - d / L, 1.6));
+      if (reduce) b = 0;
+      const idx = Math.min(n - 1, Math.max(0, Math.floor((ink[i] * (0.85 + 0.2 * b) + b * 0.14) * n)));
+      if (!idx) continue;
+      const col = b > 0.85 ? '#2c64ed' : '#0a0a0a';
+      if (col !== cur) {
+        lx.fillStyle = col;
+        cur = col;
+      }
+      lx.fillText(RAMP[idx], c * CW, r * CH);
     }
   }
 }
@@ -389,11 +441,15 @@ function frame() {
   cy += (ty - cy) * k;
   rad += (rt - rad) * (reduce ? 1 : 0.22);
   lx.clearRect(0, 0, lens.width, lens.height);
-  if (rad > 0.5 && layer) {
+  if (rad > 0.5 && layer && G) {
     lx.save();
     lx.beginPath();
     lx.arc(cx * dpr, cy * dpr, rad * dpr, 0, Math.PI * 2);
     lx.clip();
+    lx.drawImage(layer, 0, 0);
+    drawRain(performance.now() / 1000);
+    lx.setTransform(1, 0, 0, 1, 0, 0);
+    lx.globalCompositeOperation = 'destination-in';
     lx.drawImage(layer, 0, 0);
     lx.restore();
   }
