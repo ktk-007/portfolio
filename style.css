@@ -127,20 +127,34 @@ a {
 
 /* header */
 .nav {
-  position: absolute;
+  position: fixed;
   z-index: 30;
   top: calc(22px + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   padding: 0 4.5%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  pointer-events: none;
 }
 
 .nav-l, .nav-r {
   display: flex;
   align-items: center;
+  pointer-events: auto;
+}
+
+.nav-r {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.nav-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .tk {
@@ -178,29 +192,77 @@ a {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  height: 40px;
-  min-width: 118px;
-  padding: 0 20px;
+  height: 44px;
+  min-width: 136px;
+  padding: 0 24px;
   border-radius: 99px;
   background: var(--ink);
   color: #fff;
-  font: 500 13px/1 var(--disp);
-  transition: transform 0.2s, background 0.2s;
+  font: 500 14px/1 var(--disp);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
 .resume:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   background: #2b2b30;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
 
 .resume svg {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   transition: transform 0.2s;
 }
 
 .resume:hover svg {
   transform: translate(2px, -2px);
+}
+
+.hire-me {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  min-width: 136px;
+  padding: 0 22px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  font: 500 13.5px/1 var(--disp);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.hire-me:hover {
+  transform: translateY(-2px);
+  background: #0b0b0c;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+}
+
+.hire-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2.5px rgba(34, 197, 94, 0.25);
+  animation: pulse-dot 2.5s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2.5px rgba(34, 197, 94, 0.25);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 4.5px rgba(34, 197, 94, 0.4);
+  }
 }
 
 .menu-btn {
@@ -528,8 +590,22 @@ a {
   }
   .resume {
     height: 36px;
-    min-width: 0;
-    padding: 0 16px;
+    min-width: 96px;
+    padding: 0 14px;
+    font-size: 12px;
+  }
+  .hire-me {
+    height: 34px;
+    min-width: 96px;
+    padding: 0 12px;
+    font-size: 11.5px;
+  }
+  .nav-actions {
+    gap: 5px;
+  }
+  .nav-r {
+    align-items: center;
+    gap: 8px;
   }
   .nav {
     top: calc(14px + env(safe-area-inset-top, 0px));

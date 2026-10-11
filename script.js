@@ -30,6 +30,7 @@ wire($('#gh'), CFG.github);
 wire($('#li'), CFG.linkedin);
 wire($('#em'), CFG.email, 'mailto:');
 wire($('#resume'), CFG.resume);
+wire($('#hireBtn'), CFG.email, 'mailto:');
 
 document.querySelectorAll('[data-soon]').forEach(a => {
   a.title = 'Coming soon';
