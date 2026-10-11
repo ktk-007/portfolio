@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tharun-portfolio-sandy.vercel.app/sitemap.xml
+Sitemap: https://tharun-kumar-ktk-portfolio.vercel.app/sitemap.xml
