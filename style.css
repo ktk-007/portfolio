@@ -16,15 +16,22 @@
 
 html {
   scroll-padding-top: env(safe-area-inset-top, 0px);
-  height: 100%;
+  overflow-x: hidden;
 }
 
 html, body {
   margin: 0;
-  height: 100%;
   background: var(--bg);
   color: var(--ink);
-  overflow-x: hidden;
+}
+
+body {
+  min-height: 100%;
+}
+
+/* once the black dome has covered the hero, keep the page background black (no white flash when overscrolling) */
+html.dark-page {
+  background: #000;
 }
 
 a {
@@ -38,9 +45,19 @@ a {
   border-radius: 3px;
 }
 
-.hero {
+/* the track is the scroll distance during which the hero stays pinned while the dome grows */
+.track {
   position: relative;
-  height: 100%;
+  height: calc(100vh + 110vh);
+  height: calc(100svh + 110svh);
+}
+
+.hero {
+  position: sticky;
+  top: 0;
+  z-index: 5; /* keeps the fixed navbar above the About section after the hero scrolls away */
+  height: 100vh;
+  height: 100svh;
   min-height: 540px;
   overflow: hidden;
   background: var(--bg);
@@ -125,6 +142,50 @@ a {
   pointer-events: none;
 }
 
+/* black dome that rises from the bottom centre and grows until it fills the screen (radius is set from script.js) */
+.dome {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+  pointer-events: none;
+  -webkit-clip-path: circle(0px at 50% 100%);
+  clip-path: circle(0px at 50% 100%);
+  will-change: clip-path;
+}
+
+.hero.covered .portrait {
+  pointer-events: none;
+}
+
+/* About section */
+.about {
+  position: relative;
+  background: #000;
+  color: #fff;
+  min-height: 100vh;
+  padding: clamp(120px, 18vh, 200px) 6% 120px;
+}
+
+.about-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-kicker {
+  margin: 0 0 24px;
+  font: 400 12px/1 var(--mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.about-title {
+  margin: 0;
+  font: 700 clamp(40px, 7vw, 104px)/1 var(--disp);
+  letter-spacing: -0.04em;
+}
+
 /* header */
 .nav {
   position: fixed;
@@ -145,6 +206,49 @@ a {
   pointer-events: auto;
 }
 
+/* each navbar item switches to white once the black dome is behind it (the .inv class is set per item in script.js) */
+.tk, .links a {
+  transition: color 0.25s;
+}
+
+.tk.inv, .links a.inv {
+  color: #fff;
+}
+
+.divider.inv {
+  background: #fff;
+}
+
+.links a.inv:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.resume.inv {
+  background: #fff;
+  color: #0b0b0c;
+  box-shadow: none;
+}
+
+.resume.inv:hover {
+  background: #e8e8ea;
+}
+
+.hire-me.inv {
+  background: transparent;
+  color: #fff;
+  border-color: #fff;
+  box-shadow: none;
+}
+
+.hire-me.inv:hover {
+  background: #fff;
+  color: #0b0b0c;
+}
+
+.menu-btn.inv {
+  color: #fff;
+}
+
 .nav-r {
   align-items: flex-start;
   gap: 12px;
@@ -163,6 +267,7 @@ a {
 }
 
 .divider {
+  transition: background 0.25s;
   width: 1px;
   height: 22px;
   background: var(--ink);
@@ -171,20 +276,25 @@ a {
 
 .links {
   display: flex;
-  gap: clamp(18px, 2.2vw, 36px);
+  gap: clamp(2px, 0.6vw, 10px);
   list-style: none;
   margin: 0;
   padding: 0;
-  font: 500 clamp(12px, 0.85vw, 14px)/1 var(--disp);
+  font: 500 clamp(14px, 1.05vw, 17px)/1 var(--disp);
 }
 
+/* padding makes the whole area around each word clickable (about 45px tall) */
 .links a {
+  display: block;
+  padding: 14px clamp(8px, 0.9vw, 14px);
+  border-radius: 8px;
   opacity: 0.92;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, background 0.2s;
 }
 
 .links a:hover {
-  opacity: 0.5;
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .resume {
@@ -305,7 +415,7 @@ a {
 }
 
 .mpanel {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 20;
   background: #fff;
@@ -399,8 +509,8 @@ a {
 
 .social a {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   transition: transform 0.2s, opacity 0.2s;
 }
 
@@ -531,7 +641,7 @@ a {
     font-size: 9.5px;
   }
   .links {
-    gap: 16px;
+    gap: 2px;
   }
   .divider {
     margin: 0 14px;
@@ -677,6 +787,15 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .track {
+    height: auto;
+  }
+  .hero {
+    position: relative;
+  }
+  .dome {
+    display: none;
+  }
   .cue i {
     animation: none;
   }
