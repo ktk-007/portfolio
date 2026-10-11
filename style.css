@@ -29,11 +29,6 @@ body {
   min-height: 100%;
 }
 
-/* once the dome has covered the hero, keep the page background consistent (no flash when overscrolling) */
-html.dark-page {
-  background: var(--bg);
-}
-
 a {
   color: inherit;
   text-decoration: none;
@@ -45,17 +40,13 @@ a {
   border-radius: 3px;
 }
 
-/* the track is the scroll distance during which the hero stays pinned while the dome grows */
+/* track is a normal container for the hero section */
 .track {
   position: relative;
-  height: calc(100vh + 110vh);
-  height: calc(100svh + 110svh);
 }
 
 .hero {
-  position: sticky;
-  top: 0;
-  z-index: 5; /* keeps the fixed navbar above the About section after the hero scrolls away */
+  position: relative;
   height: 100vh;
   height: 100svh;
   min-height: 540px;
@@ -142,29 +133,13 @@ a {
   pointer-events: none;
 }
 
-/* dome that rises from the bottom centre and grows until it fills the screen (radius is set from script.js) */
-.dome {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  background: var(--bg);
-  pointer-events: none;
-  -webkit-clip-path: circle(0px at 50% 100%);
-  clip-path: circle(0px at 50% 100%);
-  will-change: clip-path;
-}
-
-.hero.covered .portrait {
-  pointer-events: none;
-}
-
 /* About section */
 .about {
   position: relative;
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
-  padding: clamp(120px, 18vh, 200px) 6% 120px;
+  padding: clamp(180px, 18vh, 200px) 6% 120px;
 }
 
 .about-inner {
@@ -177,13 +152,259 @@ a {
   font: 400 12px/1 var(--mono);
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  opacity: 0.6;
+  opacity: 0;
+  transform: translateX(-100px);
+  will-change: opacity, transform;
 }
 
-.about-title {
-  margin: 0;
-  font: 700 clamp(40px, 7vw, 104px)/1 var(--disp);
+/* First heading: outlined, midnight-blue stroke, transparent fill */
+.about-outline {
+  margin: 0 0 -0.15em;
+  font: 700 clamp(48px, 9vw, 128px)/1 var(--disp);
   letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px #191970;
+  text-stroke: 1.5px #191970;
+  opacity: 0;
+  transform: translateX(-100px);
+  will-change: opacity, transform;
+}
+
+/* Second heading: solid black */
+.about-solid {
+  margin: 0;
+  font: 700 clamp(48px, 9vw, 128px)/1 var(--disp);
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateX(-100px);
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-kicker,
+  .about-outline,
+  .about-solid {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* About introduction */
+.about-content {
+  width: 100%;
+  max-width: 1100px;
+  margin-top: clamp(36px, 6vw, 72px);
+}
+
+.about-introduction {
+  max-width: 780px;
+}
+
+.about-introduction p {
+  margin: 0 0 22px;
+  color: var(--ink);
+  font-size: clamp(15px, 1.15vw, 18px);
+  line-height: 1.85;
+  font-weight: 400;
+}
+
+.about-introduction p:last-child {
+  margin-bottom: 0;
+}
+
+/* Education section */
+.education {
+  margin-top: clamp(64px, 10vw, 120px);
+  padding-top: clamp(28px, 4vw, 48px);
+  border-top: 1px solid rgba(11, 11, 12, 0.15);
+}
+
+.education-kicker {
+  margin: 0 0 14px;
+  color: #555;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.education-title {
+  margin: 0 0 36px;
+  color: var(--ink);
+  font-family: var(--disp);
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+.education-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.education-item {
+  padding: 26px 0;
+  border-top: 1px solid rgba(11, 11, 12, 0.12);
+}
+
+.education-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.education-item h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(17px, 1.7vw, 22px);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.education-location {
+  margin: 5px 0 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.education-period {
+  flex-shrink: 0;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.education-degree {
+  margin: 22px 0 4px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 500;
+}
+
+.education-field {
+  margin: 0;
+  color: #555;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.education-result {
+  margin: 12px 0 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+/* Responsive education layout */
+@media (max-width: 600px) {
+  .about-content {
+    margin-top: 32px;
+  }
+
+  .about-introduction p {
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 18px;
+  }
+
+  .education {
+    margin-top: 56px;
+    padding-top: 28px;
+  }
+
+  .education-title {
+    margin-bottom: 24px;
+  }
+
+  .education-item {
+    padding: 22px 0;
+  }
+
+  .education-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .education-period {
+    white-space: normal;
+    font-size: 12px;
+  }
+
+  .education-degree {
+    margin-top: 18px;
+  }
+}
+
+/* About layout & portrait card */
+.about-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  align-items: start;
+  gap: clamp(36px, 5vw, 80px);
+}
+
+.portrait-card-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  justify-self: end;
+  perspective: 900px;
+  perspective-origin: center;
+}
+
+.portrait-particles {
+  position: absolute;
+  inset: -20px;
+  z-index: -1;
+  border-radius: 24px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.portrait-card-wrap:hover .portrait-particles {
+  opacity: 1;
+}
+
+.portrait-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 16px;
+  transform-style: preserve-3d;
+  transform: rotateX(0deg) rotateY(0deg);
+  transition:
+    transform 100ms ease-out,
+    box-shadow 200ms ease;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
+  will-change: transform;
+}
+
+.about-portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 800px) {
+  .about-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .portrait-card-wrap {
+    width: min(100%, 340px);
+    justify-self: start;
+    margin-top: 28px;
+  }
 }
 
 /* header */
@@ -224,7 +445,6 @@ a {
 }
 
 .divider {
-  transition: background 0.25s;
   width: 1px;
   height: 22px;
   background: var(--ink);
@@ -744,15 +964,6 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .track {
-    height: auto;
-  }
-  .hero {
-    position: relative;
-  }
-  .dome {
-    display: none;
-  }
   .cue i {
     animation: none;
   }

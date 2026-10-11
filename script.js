@@ -274,7 +274,7 @@ function drawP(dt) {
 function loopP(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
   last = ts;
-  if (!document.hidden && !heroCovered) drawP(dt);
+  if (!document.hidden) drawP(dt);
   requestAnimationFrame(loopP);
 }
 
@@ -530,44 +530,261 @@ addEventListener('resize', () => {
   }, 150);
 });
 
-/* ===== scroll: a dome rises from the bottom and opens into the About section ===== */
-const track = $('#track'), dome = $('#dome'), about = $('#about');
-let heroCovered = false;
+/* ===== About section scroll-driven animation ===== */
+const about = $('#about');
+const aboutKicker = about.querySelector('.about-kicker');
+const aboutOutline = about.querySelector('.about-outline');
+const aboutSolid = about.querySelector('.about-solid');
 
-function updateScroll() {
-  const vw = innerWidth, vh = hero.offsetHeight;
-  const range = Math.max(1, track.offsetHeight - vh);
-  const p = reduce ? 0 : Math.min(1, Math.max(0, (scrollY - track.offsetTop) / range));
-  const e = p * p * (3 - 2 * p);
-  const rMax = Math.hypot(vw / 2, vh) * 1.02;
-  const r = rMax * e;
-  const clip = `circle(${r}px at 50% 100%)`;
-  dome.style.clipPath = clip;
-  dome.style.webkitClipPath = clip;
-
-  const aboutTop = about.getBoundingClientRect().top;
-  heroCovered = reduce ? aboutTop <= 0 : p >= 1;
-
-  hero.classList.toggle('covered', heroCovered);
-  document.documentElement.classList.toggle('dark-page', heroCovered);
+if (!reduce && aboutKicker && aboutOutline && aboutSolid) {
+  function updateReveal() {
+    const rect = about.getBoundingClientRect();
+    const vh = window.innerHeight;
+    // Progress from when section bottom enters viewport (1.5 vh below) to when section top leaves viewport (0.5 vh above)
+    const start = vh * 1.5;    // Start revealing when section is 1.5 viewports below
+    const end = -vh * 0.5;     // Finish when section top is 0.5 viewports above
+    const progress = Math.max(0, Math.min(1, 1 - (rect.top - end) / (start - end)));
+    
+    // Staggered progress for each element
+    const kickerProgress = Math.max(0, Math.min(1, progress * 1.3));
+    const outlineProgress = Math.max(0, Math.min(1, (progress - 0.1) * 1.3));
+    const solidProgress = Math.max(0, Math.min(1, (progress - 0.2) * 1.3));
+    
+    const maxTranslate = 100; // px
+    
+    aboutKicker.style.opacity = kickerProgress;
+    aboutKicker.style.transform = `translateX(${maxTranslate * (1 - kickerProgress)}px)`;
+    
+    aboutOutline.style.opacity = outlineProgress;
+    aboutOutline.style.transform = `translateX(${maxTranslate * (1 - outlineProgress)}px)`;
+    
+    aboutSolid.style.opacity = solidProgress;
+    aboutSolid.style.transform = `translateX(${maxTranslate * (1 - solidProgress)}px)`;
+  }
+  
+  // Initial state
+  updateReveal();
+  
+  // Update on scroll
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        updateReveal();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+  
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', updateReveal);
+} else if (about) {
+  // Reduced motion: show immediately
+  aboutKicker.style.opacity = '1';
+  aboutKicker.style.transform = 'translateX(0)';
+  aboutOutline.style.opacity = '1';
+  aboutOutline.style.transform = 'translateX(0)';
+  aboutSolid.style.opacity = '1';
+  aboutSolid.style.transform = 'translateX(0)';
 }
 
-let scrollTick = false;
-addEventListener('scroll', () => {
-  if (scrollTick) return;
-  scrollTick = true;
-  requestAnimationFrame(() => {
-    scrollTick = false;
-    updateScroll();
-  });
-}, { passive: true });
-addEventListener('resize', updateScroll);
-if (document.fonts) document.fonts.ready.then(updateScroll);
-
+/* About navigation links */
 document.querySelectorAll('[data-about]').forEach(a => a.addEventListener('click', e => {
   e.preventDefault();
   closeMenu();
   scrollTo({ top: about.getBoundingClientRect().top + scrollY, behavior: reduce ? 'auto' : 'smooth' });
 }));
 
-updateScroll();
+/* ===== About portrait card 3D tilt + particles ===== */
+const portraitCard = document.querySelector('#aboutPortraitCard');
+const portraitParticles = document.querySelector('#aboutPortraitParticles');
+
+if (portraitCard && !reduce) {
+  const maxTilt = 18;
+  const resetDuration = 450;
+
+  portraitCard.style.transition =
+    'transform 80ms linear, box-shadow 200ms ease';
+
+  portraitCard.addEventListener('pointermove', (event) => {
+    if (event.pointerType === 'touch') return;
+
+    const rect = portraitCard.getBoundingClientRect();
+
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+
+    // Clamp to prevent edge fluttering
+    const clampedX = Math.max(0, Math.min(1, x));
+    const clampedY = Math.max(0, Math.min(1, y));
+
+    // Normalize independently around the center of the card.
+    const normalizedX = (clampedX - 0.5) * 2;
+    const normalizedY = (clampedY - 0.5) * 2;
+
+    // Cursor on the right tilts the right edge toward the viewer.
+    const rotateY = normalizedX * maxTilt;
+
+    // Cursor at the bottom tilts the bottom edge toward the viewer.
+    const rotateX = -normalizedY * maxTilt;
+
+    portraitCard.style.transform =
+      `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+    portraitCard.style.boxShadow =
+      `${-normalizedX * 8}px ${16 + Math.abs(normalizedY) * 8}px 40px rgba(0, 0, 0, 0.18)`;
+  });
+
+  portraitCard.addEventListener('pointerleave', () => {
+    portraitCard.style.transition =
+      `transform ${resetDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 300ms ease`;
+
+    portraitCard.style.transform =
+      'rotateX(0deg) rotateY(0deg)';
+
+    portraitCard.style.boxShadow =
+      '0 16px 40px rgba(0, 0, 0, 0.12)';
+  });
+
+  portraitCard.addEventListener('pointerenter', () => {
+    portraitCard.style.transition =
+      'transform 80ms linear, box-shadow 200ms ease';
+  });
+}
+
+/* ===== Midnight blue particles behind portrait card ===== */
+if (portraitParticles && !reduce) {
+  const canvas = portraitParticles;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animationId = null;
+  let isHovering = false;
+  let lastTime = 0;
+
+  const midnightBlue = { r: 25, g: 25, b: 112 }; // #191970
+
+  function resizeCanvas() {
+    const wrap = portraitCard.parentElement;
+    const rect = wrap.getBoundingClientRect();
+    canvas.width = rect.width * devicePixelRatio;
+    canvas.height = rect.height * devicePixelRatio;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+
+  function createParticles() {
+    const wrap = portraitCard.parentElement;
+    const rect = wrap.getBoundingClientRect();
+    const count = Math.min(60, Math.max(30, Math.floor((rect.width * rect.height) / 3000)));
+    particles = [];
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * rect.width,
+        y: Math.random() * rect.height,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        radius: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.4 + 0.1,
+        life: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  function draw(time) {
+    if (!isHovering) return;
+    
+    const dt = (time - lastTime) / 1000;
+    lastTime = time;
+
+    const wrap = portraitCard.parentElement;
+    const rect = wrap.getBoundingClientRect();
+
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    // Subtle noise field for liquid-like motion
+    for (const p of particles) {
+      // Simple noise-based flow
+      const noiseX = Math.sin(p.x * 0.01 + time * 0.001) * 0.5;
+      const noiseY = Math.cos(p.y * 0.01 + time * 0.001) * 0.5;
+
+      p.vx += (noiseX - p.vx) * 0.02;
+      p.vy += (noiseY - p.vy) * 0.02;
+
+      p.x += p.vx * dt * 60;
+      p.y += p.vy * dt * 60;
+
+      // Wrap around
+      if (p.x < -10) p.x = rect.width + 10;
+      if (p.x > rect.width + 10) p.x = -10;
+      if (p.y < -10) p.y = rect.height + 10;
+      if (p.y > rect.height + 10) p.y = -10;
+
+      p.life += dt * 2;
+      const pulse = Math.sin(p.life) * 0.3 + 0.7;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius * pulse, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${midnightBlue.r}, ${midnightBlue.g}, ${midnightBlue.b}, ${p.alpha * pulse})`;
+      ctx.fill();
+    }
+
+    // Draw connections for liquid-like web effect
+    ctx.strokeStyle = `rgba(${midnightBlue.r}, ${midnightBlue.g}, ${midnightBlue.b}, 0.06)`;
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 80) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    animationId = requestAnimationFrame(draw);
+  }
+
+  function start() {
+    if (isHovering) return;
+    isHovering = true;
+    resizeCanvas();
+    createParticles();
+    lastTime = performance.now();
+    draw(lastTime);
+  }
+
+  function stop() {
+    isHovering = false;
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+  }
+
+  // Recreate on resize
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (isHovering) {
+        resizeCanvas();
+        createParticles();
+      }
+    }, 150);
+  });
+
+  portraitCard.addEventListener('pointerenter', () => {
+    if (event.pointerType === 'touch') return;
+    start();
+  });
+
+  portraitCard.addEventListener('pointerleave', () => {
+    stop();
+  });
+}
