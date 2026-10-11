@@ -1,6 +1,15 @@
-# Assets folder ignored as requested
+# Ignore assets directory
 assets/
+
+# Ignore all files by default except index, script, and style
+/*
+!/.gitignore
+!/index.html
+!/style.css
+!/script.js
 
 # OS / Editor files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
